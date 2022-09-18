@@ -67,6 +67,9 @@ download [id] - prints the MPD url the video is available at and returns the mp4
 		return
 	}
 
+	key, _ := os.ReadFile(os.Getenv("KEY_FILE"))
+	clientID, _ := os.ReadFile(os.Getenv("CLIENT_ID_FILE"))
+
 	client := hulu.NewDefaultClient(huluSession, huluGUID)
 	w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', 0)
 	defer w.Flush()
@@ -138,9 +141,15 @@ download [id] - prints the MPD url the video is available at and returns the mp4
 			panic(err)
 		}
 
-		cdm, err := widevine.NewDefaultCDM(initData)
-		if err != nil {
-			panic(err)
+		var cdm widevine.CDM
+		if len(key) > 0 && len(clientID) > 0 {
+			if cdm, err = widevine.NewCDM(key, clientID, initData); err != nil {
+				panic(err)
+			}
+		} else {
+			if cdm, err = widevine.NewDefaultCDM(initData); err != nil {
+				panic(err)
+			}
 		}
 
 		licenseRequest, err := cdm.GetLicenseRequest()
